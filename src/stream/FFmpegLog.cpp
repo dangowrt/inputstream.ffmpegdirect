@@ -43,7 +43,25 @@ int FFmpegLog::GetLogLevel()
 }
 
 static std::mutex m_ffmpegdirectLogMutex;
+static int g_ffmpegdirectLogUsers;
 std::map<const std::thread::id, std::string> g_ffmpegdirectLogbuffer;
+
+void ff_install_avutil_log(void)
+{
+  std::lock_guard<std::mutex> lock(m_ffmpegdirectLogMutex);
+
+  if (g_ffmpegdirectLogUsers++ == 0)
+    av_log_set_callback(ff_avutil_log);
+}
+
+void ff_restore_avutil_log(void)
+{
+  std::lock_guard<std::mutex> lock(m_ffmpegdirectLogMutex);
+
+  /* the callback is global to the process, so it must not outlive us */
+  if (--g_ffmpegdirectLogUsers == 0)
+    av_log_set_callback(av_log_default_callback);
+}
 
 void ff_flush_avutil_log_buffers(void)
 {
