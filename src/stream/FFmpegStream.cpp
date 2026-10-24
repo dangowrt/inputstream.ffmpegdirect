@@ -2395,6 +2395,14 @@ AVDictionary* FFmpegStream::GetFFMpegOptionsFromInput()
         av_dict_set(&options, "cookies", cookies.c_str(), 0);
     }
   }
+  else if (url.IsProtocol("udp") || url.IsProtocol("rtp"))
+  {
+    std::string value;
+    if (url.GetProtocolOption("local_dev", value))
+      av_dict_set(&options, "local_dev", value.c_str(), 0);
+    else if (url.GetProtocolOption("local_addr", value))
+      av_dict_set(&options, "localaddr", value.c_str(), 0);
+  }
 
   const std::string host = m_httpProxy.GetProxyHost();
   if (!host.empty())
